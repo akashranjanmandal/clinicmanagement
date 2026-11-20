@@ -4,14 +4,20 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye, EyeOff, LoaderCircle, LockKeyhole } from "lucide-react";
+import { useSingleFlight } from "@/lib/use-single-flight";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [show, setShow] = useState(false);
+  const once = useSingleFlight();
 
-  async function submit(formData: FormData) {
+  function submit(formData: FormData) {
+    return once(() => send(formData));
+  }
+
+  async function send(formData: FormData) {
     setBusy(true);
     setError("");
     try {
@@ -24,11 +30,11 @@ export default function AdminLoginPage() {
       if (!response.ok) throw new Error(payload.error ?? "Could not sign in. Please try again.");
       router.replace("/admin");
       router.refresh();
+      return;
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Could not sign in. Please try again.");
-    } finally {
-      setBusy(false);
     }
+    setBusy(false);
   }
 
   return (

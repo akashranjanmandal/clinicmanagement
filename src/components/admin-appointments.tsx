@@ -1,9 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { CalendarPlus, Check, CheckCheck, LoaderCircle, MessageSquareText, Phone, RefreshCw, Search, Undo2, UserX, X } from "lucide-react";
+import { CalendarPlus, Check, CheckCheck, LoaderCircle, MessageCircle, MessageSquareText, Phone, RefreshCw, Search, Undo2, UserX, X } from "lucide-react";
 import Link from "next/link";
-import { type AppointmentStatus, formatTime, friendlyDate, statusMeta } from "@/lib/admin-format";
+import { useSingleFlight } from "@/lib/use-single-flight";
+import { type AppointmentStatus, formatDate, formatTime, friendlyDate, statusMeta } from "@/lib/admin-format";
 
 type Row = {
   id: string;
@@ -29,6 +30,21 @@ const tabs: Array<{ id: Tab; label: string; hint: string }> = [
   { id: "all", label: "Everything", hint: "All appointments, newest first" },
 ];
 
+
+function whatsappLink(row: Row, clinicName: string, countryCode: string) {
+  let number = row.patientPhone.replace(/\D/g, "").replace(/^0+/, "");
+  if (number.length === 10 && countryCode) number = countryCode + number;
+  const when = `${formatDate(row.appointmentDate)} at ${formatTime(row.startTime)}`;
+  const lines: Record<AppointmentStatus, string> = {
+    pending: `Hello ${row.patientName}, we received your appointment request with ${row.doctorName} on ${when}. We will confirm it shortly. Booking no. ${row.reference}. - ${clinicName}`,
+    confirmed: `Hello ${row.patientName}, your appointment with ${row.doctorName} on ${when} is CONFIRMED. Please arrive 10 minutes early. Booking no. ${row.reference}. - ${clinicName}`,
+    cancelled: `Hello ${row.patientName}, we are sorry - your appointment with ${row.doctorName} on ${when} has been cancelled. Please book another time or call us. Booking no. ${row.reference}. - ${clinicName}`,
+    completed: `Hello ${row.patientName}, thank you for visiting ${clinicName}. Booking no. ${row.reference}.`,
+    no_show: `Hello ${row.patientName}, we missed you for your appointment with ${row.doctorName} on ${when}. Please call us to book another time. - ${clinicName}`,
+  };
+  return `https://wa.me/${number}?text=${encodeURIComponent(lines[row.status])}`;
+}
+
 function tabParams(tab: Tab): Record<string, string> {
   if (tab === "today" || tab === "upcoming" || tab === "past") return { when: tab };
   if (tab === "pending") return { status: "pending" };
@@ -39,6 +55,8 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
   const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<Row[]>([]);
   const [today, setToday] = useState("");
+  const [clinicName, setClinicName] = useState("the clinic");
+  const [countryCode, setCountryCode] = useState("");
   const [query, setQuery] = useState("");
   const [offset, setOffset] = useState(0);
   const [hasMore, setHasMore] = useState(false);
@@ -48,6 +66,7 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
   const [notice, setNotice] = useState("");
   const [noteOpen, setNoteOpen] = useState<string | null>(null);
   const requestId = useRef(0);
+  const once = useSingleFlight();
 
   const load = useCallback(async (nextTab: Tab, search: string, nextOffset = 0) => {
     const id = ++requestId.current;
@@ -56,7 +75,7 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
     try {
       const params = new URLSearchParams({ q: search, offset: String(nextOffset), ...tabParams(nextTab) });
       const response = await fetch(`/api/admin/appointments?${params}`, { cache: "no-store" });
-      const payload = (await response.json()) as { appointments?: Row[]; hasMore?: boolean; today?: string; error?: string };
+      const payload = (await response.json()) as { appointments?: Row[]; hasMore?: boolean; today?: string; clinicName?: string; countryCode?: string; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Could not load appointments.");
       if (id !== requestId.current) return;
       const next = payload.appointments ?? [];
@@ -64,6 +83,8 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
       setOffset(nextOffset + next.length);
       setHasMore(payload.hasMore ?? false);
       setToday(payload.today ?? "");
+      setClinicName(payload.clinicName ?? "the clinic");
+      setCountryCode(payload.countryCode ?? "");
     } catch (cause) {
       if (id === requestId.current) setError(cause instanceof Error ? cause.message : "Could not load appointments.");
     } finally {
@@ -83,7 +104,11 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
     void load(next, query);
   }
 
-  async function patch(row: Row, body: { status?: AppointmentStatus; adminNote?: string | null }, done: string) {
+  function patch(row: Row, body: { status?: AppointmentStatus; adminNote?: string | null }, done: string) {
+    return once(() => patchRow(row, body, done));
+  }
+
+  async function patchRow(row: Row, body: { status?: AppointmentStatus; adminNote?: string | null }, done: string) {
     setBusy(row.id);
     setError("");
     setNotice("");
@@ -200,6 +225,11 @@ export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab
                   )}
                   {(row.status === "completed" || row.status === "cancelled" || row.status === "no_show") && (
                     <button type="button" disabled={working} onClick={() => setStatus(row, "confirmed", "Appointment reopened as confirmed", `Reopen this appointment for ${row.patientName}?`)} className="adm-btn adm-btn-outline"><Undo2 size={20} /> Reopen</button>
+                  )}
+                  {(row.status === "pending" || row.status === "confirmed" || row.status === "cancelled") && (
+                    <a href={whatsappLink(row, clinicName, countryCode)} target="_blank" rel="noreferrer" className={`adm-btn ${row.status === "confirmed" ? "!border-[#1a8f4c] !bg-[#1a8f4c] !text-white" : "adm-btn-outline"}`}>
+                      <MessageCircle size={20} /> {row.status === "confirmed" ? "Send confirmation on WhatsApp" : row.status === "cancelled" ? "Tell patient on WhatsApp" : "Message on WhatsApp"}
+                    </a>
                   )}
                   <button type="button" onClick={() => setNoteOpen(noteOpen === row.id ? null : row.id)} className="adm-btn adm-btn-outline"><MessageSquareText size={20} /> {row.adminNote ? "Edit note" : "Add note"}</button>
                   {working && <LoaderCircle className="animate-spin self-center" aria-label="Saving" />}

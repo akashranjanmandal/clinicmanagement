@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { CalendarClock, Eye, EyeOff, LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
 import { formatDate, formatDateTime, formatTime, slugify } from "@/lib/admin-format";
 import { DoctorAvailability } from "@/components/doctor-availability";
+import { useSingleFlight } from "@/lib/use-single-flight";
 
 type Resource =
   | "departments"
@@ -295,6 +296,7 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [openDoctor, setOpenDoctor] = useState("");
+  const once = useSingleFlight();
   const formRef = useRef<HTMLFormElement>(null);
   const items = data.items ?? [];
   const options = data.options ?? {};
@@ -342,7 +344,11 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
     return { ok: response.ok, status: response.status, error: payload.error };
   }
 
-  async function save(formData: FormData) {
+  function save(formData: FormData) {
+    return once(() => saveRecord(formData));
+  }
+
+  async function saveRecord(formData: FormData) {
     setSaving(true);
     setError("");
     setSuccess("");
@@ -401,7 +407,11 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
     }
   }
 
-  async function patchRow(row: RecordRow, changes: Record<string, unknown>, done: string) {
+  function patchRow(row: RecordRow, changes: Record<string, unknown>, done: string) {
+    return once(() => patchRecord(row, changes, done));
+  }
+
+  async function patchRecord(row: RecordRow, changes: Record<string, unknown>, done: string) {
     if (!row.id) return;
     setSaving(true);
     setError("");
@@ -418,7 +428,11 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
     }
   }
 
-  async function remove(row: RecordRow) {
+  function remove(row: RecordRow) {
+    return once(() => removeRecord(row));
+  }
+
+  async function removeRecord(row: RecordRow) {
     if (!row.id || !window.confirm(`Remove this ${definition.itemName}? This cannot be undone.`)) return;
     setSaving(true);
     setError("");
@@ -527,7 +541,7 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
       </div>
 
       {showForm && (
-        <form ref={formRef} key={editing?.id ?? "new"} action={save} className="adm-card mt-5 p-5 sm:p-7">
+        <form ref={formRef} key={editing?.id ?? "new"} action={save} aria-busy={saving} className="adm-card mt-5 p-5 sm:p-7">
           <div className="flex items-start justify-between gap-4">
             <h2 className="text-2xl font-bold">{heading}</h2>
             {!definition.singleton && (

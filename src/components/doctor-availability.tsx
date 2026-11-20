@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { CalendarOff, Clock3, LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
 import { formatDate, formatTime } from "@/lib/admin-format";
+import { useSingleFlight } from "@/lib/use-single-flight";
 
 type Doctor = { id: string; name: string; consultationMinutes: number };
 type Schedule = { id: string; doctorId: string; weekday: number; startTime: string; endTime: string };
@@ -35,6 +36,7 @@ export function DoctorAvailability({ doctor }: { doctor: Doctor }) {
   const [leaves, setLeaves] = useState<Leave[]>([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const once = useSingleFlight();
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -77,7 +79,11 @@ export function DoctorAvailability({ doctor }: { doctor: Doctor }) {
     };
   }, [fetchAll]);
 
-  async function run(action: () => Promise<string>) {
+  function run(action: () => Promise<string>) {
+    return once(() => execute(action));
+  }
+
+  async function execute(action: () => Promise<string>) {
     setBusy(true);
     setError("");
     setNotice("");

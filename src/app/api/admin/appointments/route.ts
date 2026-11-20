@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
 import { clinicToday } from "@/lib/clinic-date";
 import { db } from "@/lib/db";
-import { appointments, doctors } from "@/lib/db/schema";
+import { appointments, clinicSettings, doctors } from "@/lib/db/schema";
 
 export async function GET(request: Request) {
   const user = await getAdminSession();
@@ -16,6 +16,9 @@ export async function GET(request: Request) {
   const offset = Math.min(10000, Math.max(0, Number(searchParams.get("offset") ?? 0) || 0));
   const when = searchParams.get("when") ?? "";
   const today = await clinicToday();
+  const [settings] = await db.select({ name: clinicSettings.name, whatsapp: clinicSettings.whatsapp }).from(clinicSettings).limit(1);
+  const digits = (settings?.whatsapp ?? "").replace(/\D/g, "");
+  const countryCode = digits.length > 10 ? digits.slice(0, digits.length - 10) : "";
   const where = [];
   if (when === "today") where.push(eq(appointments.appointmentDate, today));
   if (when === "upcoming") where.push(gt(appointments.appointmentDate, today));
@@ -51,7 +54,7 @@ export async function GET(request: Request) {
         : [desc(appointments.appointmentDate), asc(appointments.startTime)]))
       .limit(50)
       .offset(offset);
-    return NextResponse.json({ appointments: rows, hasMore: rows.length === 50, today }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ appointments: rows, hasMore: rows.length === 50, today, clinicName: settings?.name?.trim() || "the clinic", countryCode }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Could not load admin appointments.", error);
     return NextResponse.json({ error: "Appointments could not be loaded." }, { status: 500 });

@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { Check, LoaderCircle } from "lucide-react";
 import type { DoctorCardData } from "@/lib/clinic-content";
 import { formatDate, formatTime } from "@/lib/admin-format";
+import { useSingleFlight } from "@/lib/use-single-flight";
 
 type Created = { reference: string; status: "pending" | "confirmed" };
 
@@ -36,6 +37,7 @@ export function BookingForm({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState<Created | null>(null);
+  const once = useSingleFlight();
 
   const key = doctorId && date ? `${doctorId}:${date}` : "";
   const slots = result?.key === key ? result.slots : [];
@@ -58,7 +60,11 @@ export function BookingForm({
     return () => controller.abort();
   }, [date, doctorId]);
 
-  async function submit(formData: FormData) {
+  function submit(formData: FormData) {
+    return once(() => send(formData));
+  }
+
+  async function send(formData: FormData) {
     if (!time) {
       setError("Please choose a time.");
       return;
@@ -98,9 +104,10 @@ export function BookingForm({
           {doctor?.name} · {formatDate(date)} at {formatTime(time)}
         </p>
         <p className="mt-2 text-lg text-[#3f524f]">
-          {done.status === "confirmed" ? "Your appointment is confirmed." : "Our team will call you to confirm."}
+          {done.status === "confirmed" ? "Your appointment is confirmed." : "Our team will confirm it by phone or WhatsApp. Please note your booking number."}
         </p>
         <p className="mt-5 inline-block rounded-xl bg-[#f1f6f3] px-5 py-3 text-lg">Booking number: <strong>{done.reference}</strong></p>
+        <p className="mt-5 text-base text-[#3f524f]">You can check whether it is confirmed anytime: <a href="/appointments/status" className="font-bold text-[#176b68] underline">Check booking status</a> (you will need the booking number and your mobile number).</p>
         {whatsapp && (
           <div className="mt-6">
             <a
@@ -118,7 +125,7 @@ export function BookingForm({
   }
 
   return (
-    <form action={submit} className="rounded-[24px] border-2 border-[#cfdad5] bg-white p-6 sm:p-9">
+    <form action={submit} aria-busy={busy} className="rounded-[24px] border-2 border-[#cfdad5] bg-white p-6 sm:p-9">
       <div className="grid gap-5">
         <label className={label}>
           Doctor

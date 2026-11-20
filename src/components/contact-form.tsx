@@ -2,12 +2,18 @@
 
 import { useState } from "react";
 import { ArrowRight, Check, LoaderCircle } from "lucide-react";
+import { useSingleFlight } from "@/lib/use-single-flight";
 
 export function ContactForm() {
   const [state, setState] = useState<"idle" | "sending" | "sent">("idle");
   const [error, setError] = useState("");
+  const once = useSingleFlight();
 
-  async function submit(formData: FormData) {
+  function submit(formData: FormData) {
+    return once(() => send(formData));
+  }
+
+  async function send(formData: FormData) {
     setState("sending");
     setError("");
     try {
@@ -36,7 +42,7 @@ export function ContactForm() {
   }
 
   return (
-    <form action={submit} className="rounded-[24px] border border-[#e6ece8] bg-white p-6 sm:p-8">
+    <form action={submit} aria-busy={state === "sending"} className="rounded-[24px] border border-[#e6ece8] bg-white p-6 sm:p-8">
       <h2 className="text-xl font-semibold tracking-[-0.02em]">Send us a note</h2>
       <p className="mt-2 text-base text-[#4a5a58]">We usually respond within one working day.</p>
       <div className="mt-6 grid gap-4">
