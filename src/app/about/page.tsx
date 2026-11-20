@@ -20,10 +20,10 @@ export default function AboutPage() {
       <section className="page-wrap py-20 md:py-28">
         <p className="eyebrow">A little about us</p>
         <div className="mt-6 grid gap-10 md:grid-cols-[1.05fr_0.75fr] md:items-end">
-          <h1 className="text-[clamp(3rem,7vw,6rem)] font-semibold leading-[0.98] tracking-[-0.075em]">
+          <h1 className="text-[clamp(3rem,7vw,6rem)] font-semibold leading-[0.98] tracking-[-0.02em]">
             Healthcare should feel like <span className="font-medium italic text-[#176b68]">care.</span>
           </h1>
-          <p className="max-w-lg pb-2 text-base leading-8 text-[#657573]">
+          <p className="max-w-lg pb-2 text-base leading-8 text-[#4a5a58]">
             We created this clinic to bring expert medicine a little closer to home—and to make
             every visit feel more human, more considered, and more connected.
           </p>
@@ -41,7 +41,7 @@ export default function AboutPage() {
             <p className="eyebrow">Why we&apos;re here</p>
             <h2 className="section-title mt-4">Good medicine, with room for humanity.</h2>
           </div>
-          <div className="max-w-2xl space-y-5 text-[15px] leading-8 text-[#657573]">
+          <div className="max-w-2xl space-y-5 text-[15px] leading-8 text-[#4a5a58]">
             <p>
               At {clinic.name}, we believe excellent care is both clinically thoughtful and deeply
               personal. Our doctors bring their expertise to a team that shares context, follows
@@ -65,7 +65,7 @@ export default function AboutPage() {
                 <Icon size={20} />
               </span>
               <h3 className="mt-6 text-lg font-semibold">{title}</h3>
-              <p className="mt-3 text-sm leading-7 text-[#657573]">{body}</p>
+              <p className="mt-3 text-base leading-7 text-[#4a5a58]">{body}</p>
             </article>
           ))}
         </div>
@@ -74,9 +74,9 @@ export default function AboutPage() {
         <div className="flex flex-col justify-between gap-6 rounded-[28px] bg-[#e5f4ef] p-8 sm:flex-row sm:items-center sm:p-12">
           <div>
             <p className="eyebrow">Come see us</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.055em]">We&apos;re here when you need us.</h2>
+            <h2 className="mt-3 text-3xl font-semibold tracking-[-0.02em]">We&apos;re here when you need us.</h2>
           </div>
-          <Link href="/appointments/book" className="inline-flex items-center gap-2 rounded-full bg-[#176b68] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#115350]">
+          <Link href="/appointments/book" className="inline-flex items-center gap-2 rounded-full bg-[#176b68] px-5 py-3.5 text-base font-bold text-white hover:bg-[#115350]">
             Book a visit <ArrowUpRight size={16} />
           </Link>
         </div>

@@ -4,7 +4,7 @@
   --background: #fafbf9;
   --surface: #ffffff;
   --foreground: #203332;
-  --muted: #657573;
+  --muted: #4a5a58;
   --border: #e6ece8;
   --teal: #176b68;
   --teal-dark: #115350;
@@ -44,9 +44,9 @@ body {
 
 .eyebrow {
   color: var(--teal);
-  font-size: 0.72rem;
+  font-size: 0.85rem;
   font-weight: 700;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -54,8 +54,8 @@ body {
   max-width: 720px;
   font-size: clamp(2rem, 4vw, 3.25rem);
   font-weight: 600;
-  letter-spacing: -0.055em;
-  line-height: 1.08;
+  letter-spacing: -0.02em;
+  line-height: 1.12;
 }
 
 .soft-shadow {
@@ -77,4 +77,75 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* ───────── Admin console design system ─────────
+   Built for busy front-desk staff: large type, strong contrast,
+   big tap targets and colour-coded status. Scoped under .admin-ui. */
+html:has(.admin-ui) {
+  font-size: 112.5%; /* 18px base so every rem-based size grows ~12% */
+}
+
+.admin-ui {
+  --ink: #12211f;
+  --ink-soft: #3f524f;
+  --line: #cfdad5;
+  --brand: #0f5f5c;
+  --brand-dark: #0a4744;
+  color: var(--ink);
+  line-height: 1.55;
+}
+
+.admin-ui .adm-h1 { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.admin-ui .adm-sub { font-size: 1.05rem; color: var(--ink-soft); margin-top: 0.4rem; max-width: 46rem; }
+.admin-ui .adm-card { background: #fff; border: 1.5px solid var(--line); border-radius: 18px; }
+
+.admin-ui .adm-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+  min-height: 3rem; padding: 0.6rem 1.25rem; border-radius: 12px;
+  font-size: 1rem; font-weight: 700; line-height: 1.2; cursor: pointer;
+  border: 2px solid transparent; transition: background-color .15s, border-color .15s, color .15s;
+}
+.admin-ui .adm-btn:disabled { opacity: .5; cursor: not-allowed; }
+.admin-ui .adm-btn:focus-visible, .admin-ui a:focus-visible, .admin-ui .adm-input:focus-visible { outline: 3px solid #f2b705; outline-offset: 2px; }
+.admin-ui .adm-btn-primary { background: var(--brand); color: #fff; }
+.admin-ui .adm-btn-primary:hover:not(:disabled) { background: var(--brand-dark); }
+.admin-ui .adm-btn-outline { background: #fff; color: var(--brand); border-color: var(--brand); }
+.admin-ui .adm-btn-outline:hover:not(:disabled) { background: #e5f4ef; }
+.admin-ui .adm-btn-danger { background: #fff; color: #9b1c1c; border-color: #c24141; }
+.admin-ui .adm-btn-danger:hover:not(:disabled) { background: #fdecec; }
+.admin-ui .adm-btn-sm { min-height: 2.5rem; padding: 0.4rem 0.9rem; font-size: 0.95rem; }
+
+.admin-ui .adm-label { display: block; font-size: 1rem; font-weight: 700; color: var(--ink); }
+.admin-ui .adm-help { font-size: 0.9rem; color: var(--ink-soft); margin-top: 0.25rem; font-weight: 400; }
+.admin-ui .adm-input {
+  display: block; width: 100%; min-height: 3rem; margin-top: 0.4rem; padding: 0.65rem 0.9rem;
+  font-size: 1.05rem; font-weight: 400; color: var(--ink); background: #fff;
+  border: 2px solid #9fb2ab; border-radius: 12px;
+}
+.admin-ui .adm-input:focus { border-color: var(--brand); }
+.admin-ui textarea.adm-input { min-height: 6rem; resize: vertical; }
+
+.admin-ui .badge { display: inline-flex; align-items: center; padding: 0.25rem 0.75rem; border-radius: 999px; font-size: 0.9rem; font-weight: 700; line-height: 1.3; }
+.admin-ui .badge-amber { background: #ffe9a8; color: #5c3d00; }
+.admin-ui .badge-green { background: #cdeed9; color: #0d4a26; }
+.admin-ui .badge-blue { background: #d6e6fa; color: #12396b; }
+.admin-ui .badge-red { background: #fbd5d2; color: #7a1414; }
+.admin-ui .badge-grey { background: #e2e6e4; color: #2f3b39; }
+
+.admin-ui .adm-alert { border-radius: 14px; padding: 0.9rem 1.1rem; font-size: 1.05rem; font-weight: 600; }
+.admin-ui .adm-alert-error { background: #fdecec; color: #7a1414; border: 1.5px solid #e0a3a3; }
+.admin-ui .adm-alert-ok { background: #e3f6ea; color: #0d4a26; border: 1.5px solid #9ed4b2; }
+.admin-ui .adm-alert-warn { background: #fff4d1; color: #5c3d00; border: 1.5px solid #e6c766; }
+
+.admin-ui .adm-nav-link {
+  display: flex; align-items: center; gap: 0.8rem; padding: 0.5rem 0.9rem; border-radius: 12px;
+  font-size: 1.05rem; font-weight: 600; color: var(--ink-soft);
+}
+.admin-ui .adm-nav-link:hover { background: #e5f4ef; color: var(--brand-dark); }
+.admin-ui .adm-nav-link[aria-current="page"] { background: var(--brand); color: #fff; }
+.admin-ui .adm-count { margin-left: auto; min-width: 1.6rem; padding: 0 0.5rem; text-align: center; border-radius: 999px; background: #f2b705; color: #3b2a00; font-size: 0.9rem; font-weight: 800; }
+
+h1, h2, h3 {
+  word-spacing: 0.06em;
 }

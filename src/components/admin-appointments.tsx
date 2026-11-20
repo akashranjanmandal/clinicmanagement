@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { LoaderCircle, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { CalendarPlus, Check, CheckCheck, LoaderCircle, MessageSquareText, Phone, RefreshCw, Search, Undo2, UserX, X } from "lucide-react";
+import Link from "next/link";
+import { type AppointmentStatus, formatTime, friendlyDate, statusMeta } from "@/lib/admin-format";
 
 type Row = {
   id: string;
@@ -11,115 +13,223 @@ type Row = {
   patientEmail: string | null;
   appointmentDate: string;
   startTime: string;
-  status: "pending" | "confirmed" | "completed" | "cancelled" | "no_show";
+  status: AppointmentStatus;
   reason: string | null;
   adminNote: string | null;
   doctorName: string;
 };
 
-const statusLabels = ["pending", "confirmed", "completed", "cancelled", "no_show"] as const;
+type Tab = "today" | "pending" | "upcoming" | "past" | "all";
 
-export function AdminAppointments({ initialRows }: { initialRows: Row[] }) {
-  const [rows, setRows] = useState(initialRows);
+const tabs: Array<{ id: Tab; label: string; hint: string }> = [
+  { id: "today", label: "Today", hint: "Patients coming in today" },
+  { id: "pending", label: "Needs confirmation", hint: "New requests waiting for you to confirm" },
+  { id: "upcoming", label: "Coming up", hint: "Appointments after today" },
+  { id: "past", label: "Earlier", hint: "Appointments before today" },
+  { id: "all", label: "Everything", hint: "All appointments, newest first" },
+];
+
+function tabParams(tab: Tab): Record<string, string> {
+  if (tab === "today" || tab === "upcoming" || tab === "past") return { when: tab };
+  if (tab === "pending") return { status: "pending" };
+  return {};
+}
+
+export function AdminAppointments({ initialTab }: { initialTab: Tab }) {
+  const [tab, setTab] = useState<Tab>(initialTab);
+  const [rows, setRows] = useState<Row[]>([]);
+  const [today, setToday] = useState("");
   const [query, setQuery] = useState("");
-  const [status, setStatus] = useState("");
-  const [offset, setOffset] = useState(initialRows.length);
-  const [hasMore, setHasMore] = useState(initialRows.length === 50);
+  const [offset, setOffset] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [noteOpen, setNoteOpen] = useState<string | null>(null);
+  const requestId = useRef(0);
 
-  async function load(search = query, filter = status, nextOffset = 0) {
-    setBusy("load");
+  const load = useCallback(async (nextTab: Tab, search: string, nextOffset = 0) => {
+    const id = ++requestId.current;
+    setLoading(true);
     setError("");
     try {
-      const params = new URLSearchParams({ q: search, status: filter, offset: String(nextOffset) });
+      const params = new URLSearchParams({ q: search, offset: String(nextOffset), ...tabParams(nextTab) });
       const response = await fetch(`/api/admin/appointments?${params}`, { cache: "no-store" });
-      const payload = (await response.json()) as { appointments?: Row[]; hasMore?: boolean; error?: string };
+      const payload = (await response.json()) as { appointments?: Row[]; hasMore?: boolean; today?: string; error?: string };
       if (!response.ok) throw new Error(payload.error ?? "Could not load appointments.");
-      const nextRows = payload.appointments ?? [];
-      setRows(nextOffset ? [...rows, ...nextRows] : nextRows);
-      setOffset(nextOffset + nextRows.length);
+      if (id !== requestId.current) return;
+      const next = payload.appointments ?? [];
+      setRows((current) => (nextOffset ? [...current, ...next] : next));
+      setOffset(nextOffset + next.length);
       setHasMore(payload.hasMore ?? false);
+      setToday(payload.today ?? "");
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not load appointments.");
+      if (id === requestId.current) setError(cause instanceof Error ? cause.message : "Could not load appointments.");
     } finally {
-      setBusy("");
+      if (id === requestId.current) setLoading(false);
     }
+  }, []);
+
+  useEffect(() => {
+    // Initial fetch; deferred so state updates happen outside the effect body.
+    const timer = setTimeout(() => void load(initialTab, ""), 0);
+    return () => clearTimeout(timer);
+  }, [initialTab, load]);
+
+  function chooseTab(next: Tab) {
+    setTab(next);
+    setNotice("");
+    void load(next, query);
   }
 
-  async function updateStatus(id: string, nextStatus: Row["status"]) {
-    setBusy(id);
+  async function patch(row: Row, body: { status?: AppointmentStatus; adminNote?: string | null }, done: string) {
+    setBusy(row.id);
     setError("");
+    setNotice("");
     try {
-      const response = await fetch(`/api/admin/appointments/${id}`, {
+      const response = await fetch(`/api/admin/appointments/${row.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: nextStatus }),
+        body: JSON.stringify(body),
       });
-      const payload = (await response.json()) as { status?: Row["status"]; error?: string };
-      if (!response.ok || !payload.status) throw new Error(payload.error ?? "Could not update status.");
-      setRows((current) => current.map((row) => row.id === id ? { ...row, status: payload.status! } : row));
+      const payload = (await response.json()) as { status?: AppointmentStatus; error?: string };
+      if (!response.ok) throw new Error(payload.error ?? "Could not update this appointment.");
+      setRows((current) =>
+        current.map((item) => (item.id === row.id ? { ...item, ...(body.status ? { status: body.status } : {}), ...(body.adminNote !== undefined ? { adminNote: body.adminNote } : {}) } : item)),
+      );
+      setNotice(`${done} — ${row.patientName}`);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Could not update appointment.");
+      setError(cause instanceof Error ? cause.message : "Could not update this appointment.");
     } finally {
       setBusy("");
     }
   }
+
+  function setStatus(row: Row, status: AppointmentStatus, done: string, confirmText?: string) {
+    if (confirmText && !window.confirm(confirmText)) return;
+    void patch(row, { status }, done);
+  }
+
+  const current = tabs.find((item) => item.id === tab)!;
 
   return (
     <div>
-      <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
-        <div><p className="eyebrow">Patient visits</p><h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em]">Appointments</h1></div>
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <label className="flex items-center gap-2 rounded-xl border border-[#e6ece8] bg-white px-3 py-2.5">
-            <Search size={15} className="text-[#82928d]" /><span className="sr-only">Search appointments</span>
-            <input value={query} onChange={(event) => setQuery(event.target.value)} onKeyDown={(event) => event.key === "Enter" && void load(query, status)} placeholder="Name, phone, reference" className="w-full bg-transparent text-xs outline-none sm:w-44" />
-          </label>
-          <select value={status} onChange={(event) => { setStatus(event.target.value); void load(query, event.target.value); }} className="rounded-xl border border-[#e6ece8] bg-white px-3 py-2.5 text-xs outline-none">
-            <option value="">All statuses</option>
-            {statusLabels.map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
-          </select>
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
+        <div>
+          <h1 className="adm-h1">Appointments</h1>
+          <p className="adm-sub">{current.hint}.</p>
         </div>
+        <Link href="/appointments/book" className="adm-btn adm-btn-primary shrink-0"><CalendarPlus size={20} /> Book for a patient</Link>
+      </header>
+
+      <div role="tablist" aria-label="Appointment groups" className="mt-6 flex flex-wrap gap-2">
+        {tabs.map((item) => (
+          <button key={item.id} role="tab" type="button" aria-selected={tab === item.id} onClick={() => chooseTab(item.id)} className={`adm-btn ${tab === item.id ? "adm-btn-primary" : "adm-btn-outline"}`}>
+            {item.label}
+          </button>
+        ))}
       </div>
-      {error && <p role="alert" className="mt-5 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
-      <div className="mt-6 overflow-hidden rounded-[22px] border border-[#e6ece8] bg-white">
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[900px] text-left text-xs">
-            <thead className="bg-[#fafbf9] text-[10px] uppercase tracking-[0.1em] text-[#82928d]">
-              <tr><th className="px-5 py-4 font-semibold">Patient</th><th className="px-4 py-4 font-semibold">Doctor</th><th className="px-4 py-4 font-semibold">Date & time</th><th className="px-4 py-4 font-semibold">Status</th><th className="px-4 py-4 font-semibold">Update</th></tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id} className="border-t border-[#edf1ee] align-top">
-                  <td className="px-5 py-4"><p className="font-semibold">{row.patientName}</p><p className="mt-1 text-[10px] text-[#82928d]">{row.patientPhone}</p><p className="mt-1 text-[10px] text-[#82928d]">{row.reference}</p></td>
-                  <td className="px-4 py-4 text-[#657573]">{row.doctorName}</td>
-                  <td className="px-4 py-4 text-[#657573]">{row.appointmentDate}<br />{row.startTime}</td>
-                  <td className="px-4 py-4"><span className="rounded-full bg-[#f0f5f1] px-2.5 py-1 text-[10px] font-bold capitalize text-[#536b5f]">{row.status.replace("_", " ")}</span></td>
-                  <td className="px-4 py-4">
-                    <select
-                      value={row.status}
-                      disabled={busy === row.id}
-                      onChange={(event) => void updateStatus(row.id, event.target.value as Row["status"])}
-                      aria-label={`Update status for ${row.reference}`}
-                      className="rounded-lg border border-[#e6ece8] bg-white px-2 py-2 text-[10px] capitalize outline-none disabled:opacity-50"
-                    >
-                      {statusLabels.map((item) => <option key={item} value={item}>{item.replace("_", " ")}</option>)}
-                    </select>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!rows.length && <div className="p-12 text-center text-sm text-[#82928d]">No appointments match your filters.</div>}
-        {hasMore && (
-          <div className="border-t border-[#edf1ee] p-4 text-center">
-            <button type="button" disabled={busy === "load"} onClick={() => void load(query, status, offset)} className="inline-flex items-center gap-2 rounded-full border border-[#dfe8e2] px-5 py-2.5 text-xs font-bold text-[#176b68] disabled:opacity-60">
-              {busy === "load" && <LoaderCircle size={14} className="animate-spin" />} Load more
-            </button>
+
+      <form
+        onSubmit={(event) => { event.preventDefault(); void load(tab, query); }}
+        className="mt-4 flex flex-col gap-2 sm:flex-row"
+        role="search"
+      >
+        <label className="flex-1">
+          <span className="sr-only">Search by patient name or phone</span>
+          <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Search by patient name or phone number" className="adm-input !mt-0" />
+        </label>
+        <button type="submit" className="adm-btn adm-btn-primary"><Search size={20} /> Search</button>
+        <button type="button" onClick={() => { setQuery(""); void load(tab, ""); }} className="adm-btn adm-btn-outline"><RefreshCw size={20} /> Refresh</button>
+      </form>
+
+      <div aria-live="polite" className="mt-4 grid gap-3">
+        {error && <p role="alert" className="adm-alert adm-alert-error">{error}</p>}
+        {notice && <p className="adm-alert adm-alert-ok">{notice}</p>}
+      </div>
+
+      <div className="mt-5 grid gap-4">
+        {loading && !rows.length ? (
+          <p className="adm-card flex items-center justify-center gap-3 p-12 text-lg"><LoaderCircle className="animate-spin" /> Loading appointments…</p>
+        ) : rows.length === 0 ? (
+          <div className="adm-card p-12 text-center">
+            <p className="text-xl font-bold">Nothing here</p>
+            <p className="mt-2 text-lg text-[#3f524f]">{query ? "No appointment matches your search." : tab === "pending" ? "Great — no requests are waiting for confirmation." : "There are no appointments in this list."}</p>
           </div>
+        ) : (
+          rows.map((row) => {
+            const meta = statusMeta[row.status];
+            const working = busy === row.id;
+            return (
+              <article key={row.id} className="adm-card p-5">
+                <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <div className="flex gap-5">
+                    <div className="w-32 shrink-0 rounded-xl bg-[#e5f4ef] p-3 text-center">
+                      <p className="text-xl font-bold text-[#0a4744]">{formatTime(row.startTime)}</p>
+                      <p className="mt-1 text-base font-semibold text-[#2d4a47]">{friendlyDate(row.appointmentDate, today)}</p>
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-xl font-bold">{row.patientName}</p>
+                      <a href={`tel:${row.patientPhone}`} className="mt-1 inline-flex items-center gap-2 text-lg font-semibold text-[#0f5f5c] underline"><Phone size={18} /> {row.patientPhone}</a>
+                      <p className="mt-1 text-lg">With <strong>{row.doctorName}</strong></p>
+                      {row.reason && <p className="mt-1 text-base text-[#3f524f]">Reason: {row.reason}</p>}
+                      {row.adminNote && <p className="mt-2 rounded-lg bg-[#fff4d1] px-3 py-2 text-base text-[#5c3d00]"><strong>Note:</strong> {row.adminNote}</p>}
+                      <p className="mt-2 text-sm text-[#3f524f]">Booking no. {row.reference}</p>
+                    </div>
+                  </div>
+                  <span className={`badge ${meta.className} self-start`}>{meta.label}</span>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2 border-t-2 border-[#e3ebe7] pt-4">
+                  {row.status === "pending" && (
+                    <>
+                      <button type="button" disabled={working} onClick={() => setStatus(row, "confirmed", "Appointment confirmed")} className="adm-btn adm-btn-primary"><Check size={20} /> Confirm</button>
+                      <button type="button" disabled={working} onClick={() => setStatus(row, "cancelled", "Appointment cancelled", `Cancel the appointment for ${row.patientName}?`)} className="adm-btn adm-btn-danger"><X size={20} /> Cancel appointment</button>
+                    </>
+                  )}
+                  {row.status === "confirmed" && (
+                    <>
+                      <button type="button" disabled={working} onClick={() => setStatus(row, "completed", "Marked as visit done")} className="adm-btn adm-btn-primary"><CheckCheck size={20} /> Visit done</button>
+                      <button type="button" disabled={working} onClick={() => setStatus(row, "no_show", "Marked as did not come", `Mark ${row.patientName} as did not come?`)} className="adm-btn adm-btn-outline"><UserX size={20} /> Did not come</button>
+                      <button type="button" disabled={working} onClick={() => setStatus(row, "cancelled", "Appointment cancelled", `Cancel the appointment for ${row.patientName}?`)} className="adm-btn adm-btn-danger"><X size={20} /> Cancel appointment</button>
+                    </>
+                  )}
+                  {(row.status === "completed" || row.status === "cancelled" || row.status === "no_show") && (
+                    <button type="button" disabled={working} onClick={() => setStatus(row, "confirmed", "Appointment reopened as confirmed", `Reopen this appointment for ${row.patientName}?`)} className="adm-btn adm-btn-outline"><Undo2 size={20} /> Reopen</button>
+                  )}
+                  <button type="button" onClick={() => setNoteOpen(noteOpen === row.id ? null : row.id)} className="adm-btn adm-btn-outline"><MessageSquareText size={20} /> {row.adminNote ? "Edit note" : "Add note"}</button>
+                  {working && <LoaderCircle className="animate-spin self-center" aria-label="Saving" />}
+                </div>
+
+                {noteOpen === row.id && (
+                  <form
+                    className="mt-4"
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      const note = String(new FormData(event.currentTarget).get("note") ?? "").trim();
+                      void patch(row, { adminNote: note || null }, "Note saved").then(() => setNoteOpen(null));
+                    }}
+                  >
+                    <label className="adm-label">Internal note (patients cannot see this)
+                      <textarea name="note" defaultValue={row.adminNote ?? ""} maxLength={1000} className="adm-input" />
+                    </label>
+                    <button type="submit" disabled={working} className="adm-btn adm-btn-primary mt-3">Save note</button>
+                  </form>
+                )}
+              </article>
+            );
+          })
         )}
       </div>
+
+      {hasMore && (
+        <div className="mt-6 text-center">
+          <button type="button" disabled={loading} onClick={() => void load(tab, query, offset)} className="adm-btn adm-btn-outline">
+            {loading && <LoaderCircle size={18} className="animate-spin" />} Show more
+          </button>
+        </div>
+      )}
     </div>
   );
 }

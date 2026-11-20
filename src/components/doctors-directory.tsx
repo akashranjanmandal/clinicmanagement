@@ -26,16 +26,16 @@ export function DoctorsDirectory({ doctors }: { doctors: DoctorCardData[] }) {
     <>
       <div className="mt-9 flex flex-col gap-3 sm:flex-row">
         <label className="flex flex-1 items-center gap-3 rounded-full border border-[#e6ece8] bg-white px-5 py-3.5">
-          <Search size={17} className="text-[#82928d]" />
+          <Search size={17} className="text-[#5f6f6c]" />
           <span className="sr-only">Search doctors</span>
           <input
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             placeholder="Search by name or specialty"
-            className="w-full bg-transparent text-sm outline-none placeholder:text-[#97a39f]"
+            className="w-full bg-transparent text-base outline-none placeholder:text-[#97a39f]"
           />
         </label>
-        <label className="rounded-full border border-[#e6ece8] bg-white px-5 py-3.5 text-sm text-[#657573]">
+        <label className="rounded-full border border-[#e6ece8] bg-white px-5 py-3.5 text-base text-[#4a5a58]">
           <span className="sr-only">Filter by department</span>
           <select
             value={department}
@@ -54,7 +54,7 @@ export function DoctorsDirectory({ doctors }: { doctors: DoctorCardData[] }) {
       ) : (
         <div className="mt-8 rounded-[24px] border border-dashed border-[#cbd9d1] bg-white p-12 text-center">
           <h2 className="text-lg font-semibold">No doctors found</h2>
-          <p className="mt-2 text-sm text-[#657573]">Try a different name or department.</p>
+          <p className="mt-2 text-base text-[#4a5a58]">Try a different name or department.</p>
         </div>
       )}
     </>

@@ -18,19 +18,19 @@ export function DoctorCard({ doctor }: { doctor: DoctorCardData }) {
         />
       </Link>
       <div className="p-6">
-        <p className="text-[11px] font-bold uppercase tracking-[0.15em] text-[#176b68]">
+        <p className="text-sm font-bold uppercase tracking-[0.15em] text-[#176b68]">
           {doctor.departmentName}
         </p>
-        <h3 className="mt-2 text-xl font-semibold tracking-[-0.045em]">{doctor.name}</h3>
-        <p className="mt-1 text-[13px] text-[#657573]">{doctor.qualification}</p>
-        <p className="mt-4 min-h-[48px] text-sm leading-6 text-[#657573]">{doctor.biography}</p>
+        <h3 className="mt-2 text-xl font-semibold tracking-[-0.02em]">{doctor.name}</h3>
+        <p className="mt-1 text-base text-[#4a5a58]">{doctor.qualification}</p>
+        <p className="mt-4 min-h-[48px] text-base leading-6 text-[#4a5a58]">{doctor.biography}</p>
         <div className="mt-5 flex items-center justify-between border-t border-[#e6ece8] pt-4">
-          <span className="text-xs font-semibold text-[#657573]">
+          <span className="text-sm font-semibold text-[#4a5a58]">
             {doctor.experienceYears} years experience
           </span>
           <Link
             href={`/appointments/book?doctor=${doctor.id ?? doctor.slug}`}
-            className="inline-flex items-center gap-2 text-xs font-bold text-[#176b68] hover:text-[#115350]"
+            className="inline-flex items-center gap-2 text-sm font-bold text-[#176b68] hover:text-[#115350]"
           >
             <CalendarDays size={15} /> Book <ArrowUpRight size={13} />
           </Link>

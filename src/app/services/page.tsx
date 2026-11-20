@@ -19,10 +19,10 @@ export default async function ServicesPage() {
       <section className="page-wrap py-20 md:py-28">
         <p className="eyebrow">Care, thoughtfully connected</p>
         <div className="mt-5 grid gap-8 md:grid-cols-[1fr_0.65fr] md:items-end">
-          <h1 className="text-[clamp(3rem,7vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.075em]">
+          <h1 className="text-[clamp(3rem,7vw,5.5rem)] font-semibold leading-[0.98] tracking-[-0.02em]">
             The care you need, <span className="font-medium italic text-[#176b68]">all in one place.</span>
           </h1>
-          <p className="pb-1 text-[15px] leading-7 text-[#657573]">
+          <p className="pb-1 text-[15px] leading-7 text-[#4a5a58]">
             From everyday wellbeing to specialist support, our team makes it simpler to get the
             right care at the right time.
           </p>
@@ -35,10 +35,10 @@ export default async function ServicesPage() {
                 <span className="grid size-12 place-items-center rounded-[16px] bg-[#e5f4ef] text-[#176b68]">
                   <Icon size={20} />
                 </span>
-                <h2 className="mt-7 text-xl font-semibold tracking-[-0.045em]">{service.title}</h2>
-                <p className="mt-3 text-sm leading-7 text-[#657573]">{service.shortDescription}</p>
+                <h2 className="mt-7 text-xl font-semibold tracking-[-0.02em]">{service.title}</h2>
+                <p className="mt-3 text-base leading-7 text-[#4a5a58]">{service.shortDescription}</p>
                 {"departmentName" in service && service.departmentName && (
-                  <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.12em] text-[#176b68]">
+                  <p className="mt-4 text-sm font-bold uppercase tracking-[0.12em] text-[#176b68]">
                     {service.departmentName}
                   </p>
                 )}
@@ -47,7 +47,7 @@ export default async function ServicesPage() {
           })}
         </div>
         {!services.length && (
-          <p className="mt-8 rounded-[20px] border border-dashed border-[#cbd9d1] bg-white p-6 text-sm text-[#657573]">
+          <p className="mt-8 rounded-[20px] border border-dashed border-[#cbd9d1] bg-white p-6 text-base text-[#4a5a58]">
             Services will appear here after they are added to the clinic database.
           </p>
         )}
@@ -58,7 +58,7 @@ export default async function ServicesPage() {
             <p className="eyebrow">A welcoming space</p>
             <h2 className="section-title mt-4">Thoughtful details make a difference.</h2>
           </div>
-          <div className="grid gap-5 text-sm leading-7 text-[#657573] sm:grid-cols-2">
+          <div className="grid gap-5 text-base leading-7 text-[#4a5a58] sm:grid-cols-2">
             <p>Comfortable, accessible spaces designed to help you feel at ease from the moment you arrive.</p>
             <p>Convenient diagnostics and coordinated follow-up, so your care feels connected.</p>
             <p>Clear guidance from our team at each step of your health journey.</p>
@@ -66,7 +66,7 @@ export default async function ServicesPage() {
           </div>
         </div>
         <div className="page-wrap mt-10">
-          <Link href="/appointments/book" className="inline-flex items-center gap-2 rounded-full bg-[#176b68] px-5 py-3.5 text-sm font-bold text-white hover:bg-[#115350]">
+          <Link href="/appointments/book" className="inline-flex items-center gap-2 rounded-full bg-[#176b68] px-5 py-3.5 text-base font-bold text-white hover:bg-[#115350]">
             Find the right care <ArrowUpRight size={16} />
           </Link>
         </div>

@@ -19,10 +19,10 @@ export default async function BookAppointmentPage({ searchParams }: Props) {
   return (
     <section className="page-wrap py-16 md:py-24">
       <p className="eyebrow">We&apos;ll take it from here</p>
-      <h1 className="mt-4 max-w-3xl text-[clamp(2.8rem,6vw,5rem)] font-semibold leading-[1.02] tracking-[-0.075em]">
+      <h1 className="mt-4 max-w-3xl text-[clamp(2.8rem,6vw,5rem)] font-semibold leading-[1.02] tracking-[-0.02em]">
         Let&apos;s find a time that <span className="font-medium italic text-[#176b68]">works for you.</span>
       </h1>
-      <p className="mt-5 max-w-xl text-sm leading-7 text-[#657573]">
+      <p className="mt-5 max-w-xl text-lg leading-8 text-[#4a5a58]">
         Choose your doctor and an available time. Your appointment will be requested and our team
         will follow up to confirm.
       </p>

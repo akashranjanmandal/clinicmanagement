@@ -18,10 +18,10 @@ export default async function Home() {
       <div className="mx-auto max-w-[1020px]">
         <div className="mb-8 max-w-2xl">
           <p className="eyebrow">Appointment booking</p>
-          <h1 className="mt-4 text-[clamp(2.6rem,6vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.075em]">
+          <h1 className="mt-4 text-[clamp(2.6rem,6vw,4.6rem)] font-semibold leading-[1.02] tracking-[-0.02em]">
             Book your <span className="font-medium italic text-[#176b68]">appointment.</span>
           </h1>
-          <p className="mt-4 max-w-xl text-sm leading-7 text-[#657573]">
+          <p className="mt-4 max-w-xl text-lg leading-8 text-[#4a5a58]">
             Choose a doctor and an available time. Your clinic team will follow up to confirm your visit.
           </p>
         </div>

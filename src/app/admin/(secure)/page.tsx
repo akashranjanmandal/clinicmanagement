@@ -1,138 +1,108 @@
 import Link from "next/link";
-import { count, eq, gte } from "drizzle-orm";
-import { ArrowUpRight, CalendarCheck, CalendarDays, Clock3, UsersRound } from "lucide-react";
+import { and, asc, count, eq, gt, ne } from "drizzle-orm";
+import { ArrowRight, CalendarCheck, CalendarClock, CalendarPlus, ClipboardList, Mail, Stethoscope } from "lucide-react";
+import { getAdminSession } from "@/lib/admin-auth";
+import { clinicToday } from "@/lib/clinic-date";
 import { db } from "@/lib/db";
 import { appointments, contactMessages, doctors } from "@/lib/db/schema";
-import { clinic } from "@/lib/clinic-content";
+import { formatDate, formatTime, statusMeta } from "@/lib/admin-format";
 
-function today() {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Kolkata",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
-export default async function AdminOverviewPage() {
-  let total = 0;
-  let todays = 0;
+export default async function AdminHomePage() {
+  const user = await getAdminSession();
+  const today = await clinicToday();
+  let todayCount = 0;
   let pending = 0;
-  let confirmed = 0;
+  let upcoming = 0;
+  let messages = 0;
   let activeDoctors = 0;
-  let newMessages = 0;
-  let upcoming: Array<{
-    id: string;
-    reference: string;
-    patientName: string;
-    appointmentDate: string;
-    startTime: string;
-    status: string;
-    doctorName: string;
-  }> = [];
+  let agenda: Array<{ id: string; patientName: string; startTime: string; status: keyof typeof statusMeta; doctorName: string }> = [];
+
   if (db) {
-    const [totalRow] = await db.select({ value: count() }).from(appointments);
-    const [todayRow] = await db.select({ value: count() }).from(appointments).where(eq(appointments.appointmentDate, today()));
-    const [pendingRow] = await db.select({ value: count() }).from(appointments).where(eq(appointments.status, "pending"));
-    const [confirmedRow] = await db.select({ value: count() }).from(appointments).where(eq(appointments.status, "confirmed"));
-    const [doctorRow] = await db.select({ value: count() }).from(doctors).where(eq(doctors.isActive, true));
-    const [messageRow] = await db.select({ value: count() }).from(contactMessages).where(eq(contactMessages.status, "new"));
-    total = totalRow?.value ?? 0;
-    todays = todayRow?.value ?? 0;
-    pending = pendingRow?.value ?? 0;
-    confirmed = confirmedRow?.value ?? 0;
-    activeDoctors = doctorRow?.value ?? 0;
-    newMessages = messageRow?.value ?? 0;
-    upcoming = await db
-      .select({
-        id: appointments.id,
-        reference: appointments.reference,
-        patientName: appointments.patientName,
-        appointmentDate: appointments.appointmentDate,
-        startTime: appointments.startTime,
-        status: appointments.status,
-        doctorName: doctors.name,
-      })
+    const one = async (q: Promise<Array<{ value: number }>>) => (await q)[0]?.value ?? 0;
+    [todayCount, pending, upcoming, messages, activeDoctors] = await Promise.all([
+      one(db.select({ value: count() }).from(appointments).where(and(eq(appointments.appointmentDate, today), ne(appointments.status, "cancelled")))),
+      one(db.select({ value: count() }).from(appointments).where(eq(appointments.status, "pending"))),
+      one(db.select({ value: count() }).from(appointments).where(and(gt(appointments.appointmentDate, today), ne(appointments.status, "cancelled")))),
+      one(db.select({ value: count() }).from(contactMessages).where(eq(contactMessages.status, "new"))),
+      one(db.select({ value: count() }).from(doctors).where(eq(doctors.isActive, true))),
+    ]);
+    agenda = await db
+      .select({ id: appointments.id, patientName: appointments.patientName, startTime: appointments.startTime, status: appointments.status, doctorName: doctors.name })
       .from(appointments)
       .innerJoin(doctors, eq(appointments.doctorId, doctors.id))
-      .where(gte(appointments.appointmentDate, today()))
-      .orderBy(appointments.appointmentDate, appointments.startTime)
-      .limit(6);
+      .where(and(eq(appointments.appointmentDate, today), ne(appointments.status, "cancelled")))
+      .orderBy(asc(appointments.startTime))
+      .limit(10);
   }
-  const cards = [
-    { label: "All appointments", value: total, icon: CalendarDays },
-    { label: "Today", value: todays, icon: CalendarCheck },
-    { label: "Awaiting confirmation", value: pending, icon: Clock3 },
-    { label: "Active doctors", value: activeDoctors, icon: UsersRound },
+
+  const hour = Number(new Intl.DateTimeFormat("en-GB", { hour: "numeric", hour12: false, timeZone: "Asia/Kolkata" }).format(new Date()));
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+
+  const tiles = [
+    { href: "/admin/appointments?tab=today", label: "Patients today", value: todayCount, icon: CalendarCheck, tone: "bg-white" },
+    { href: "/admin/appointments?tab=pending", label: "Waiting for your confirmation", value: pending, icon: ClipboardList, tone: pending ? "bg-[#fff4d1] border-[#e6c766]" : "bg-white" },
+    { href: "/admin/messages", label: "New patient messages", value: messages, icon: Mail, tone: messages ? "bg-[#fff4d1] border-[#e6c766]" : "bg-white" },
+    { href: "/admin/appointments?tab=upcoming", label: "Coming up after today", value: upcoming, icon: CalendarClock, tone: "bg-white" },
   ];
 
   return (
     <div>
-      <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+      <header className="flex flex-col justify-between gap-4 sm:flex-row sm:items-start">
         <div>
-          <p className="eyebrow">Good to see you</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-[-0.06em]">Clinic overview</h1>
-          <p className="mt-2 text-sm text-[#657573]">Here&apos;s what&apos;s happening at {clinic.name} today.</p>
+          <h1 className="adm-h1">{greeting}, {user?.name.split(" ")[0] ?? "there"}</h1>
+          <p className="adm-sub">Today is {formatDate(today)}. Here is what needs your attention.</p>
         </div>
-        <Link href="/appointments/book" className="inline-flex items-center gap-2 rounded-full bg-[#176b68] px-5 py-3 text-xs font-bold text-white hover:bg-[#115350]">
-          New appointment <ArrowUpRight size={15} />
-        </Link>
+        <Link href="/appointments/book" className="adm-btn adm-btn-primary shrink-0"><CalendarPlus size={20} /> Book for a patient</Link>
       </header>
-      {!db && (
-        <p className="mt-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-          Database is not configured. Add Turso credentials and run migrations to load clinic data.
-        </p>
-      )}
-      <section className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {cards.map(({ label, value, icon: Icon }) => (
-          <article key={label} className="rounded-[20px] border border-[#e6ece8] bg-white p-5">
-            <div className="flex items-center justify-between">
-              <span className="grid size-10 place-items-center rounded-[13px] bg-[#e5f4ef] text-[#176b68]"><Icon size={18} /></span>
-              <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-[#82928d]">Live</span>
-            </div>
-            <p className="mt-5 text-3xl font-semibold tracking-[-0.06em]">{value}</p>
-            <p className="mt-1 text-xs font-semibold text-[#657573]">{label}</p>
-          </article>
+
+      {!db && <p className="adm-alert adm-alert-warn mt-6">The database is not connected. Ask your technical contact to check the clinic database settings.</p>}
+
+      <section aria-label="Summary" className="mt-7 grid gap-4 sm:grid-cols-2">
+        {tiles.map(({ href, label, value, icon: Icon, tone }) => (
+          <Link key={label} href={href} className={`adm-card ${tone} flex items-center gap-5 p-5 transition-shadow hover:shadow-lg`}>
+            <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-[#e5f4ef] text-[#0f5f5c]"><Icon size={28} aria-hidden /></span>
+            <span>
+              <span className="block text-4xl font-bold leading-none">{value}</span>
+              <span className="mt-1 block text-lg font-semibold text-[#3f524f]">{label}</span>
+            </span>
+            <ArrowRight className="ml-auto text-[#0f5f5c]" aria-hidden />
+          </Link>
         ))}
       </section>
-      <div className="mt-7 grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
-        <section className="overflow-hidden rounded-[22px] border border-[#e6ece8] bg-white">
-          <div className="flex items-center justify-between border-b border-[#e6ece8] px-5 py-5">
-            <div><h2 className="font-semibold">Upcoming appointments</h2><p className="mt-1 text-xs text-[#82928d]">The next visits on your calendar</p></div>
-            <Link href="/admin/appointments" className="text-xs font-bold text-[#176b68]">View all</Link>
-          </div>
-          {upcoming.length ? (
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[590px] text-left text-xs">
-                <thead className="bg-[#fafbf9] text-[10px] uppercase tracking-[0.1em] text-[#82928d]">
-                  <tr><th className="px-5 py-3 font-semibold">Patient</th><th className="px-4 py-3 font-semibold">Doctor</th><th className="px-4 py-3 font-semibold">Date & time</th><th className="px-4 py-3 font-semibold">Status</th></tr>
-                </thead>
-                <tbody>
-                  {upcoming.map((item) => (
-                    <tr key={item.id} className="border-t border-[#edf1ee]">
-                      <td className="px-5 py-4"><p className="font-semibold">{item.patientName}</p><p className="mt-1 text-[10px] text-[#82928d]">{item.reference}</p></td>
-                      <td className="px-4 py-4 text-[#657573]">{item.doctorName}</td>
-                      <td className="px-4 py-4 text-[#657573]">{item.appointmentDate}<br />{item.startTime}</td>
-                      <td className="px-4 py-4"><span className="rounded-full bg-[#fff4df] px-2.5 py-1 text-[10px] font-bold capitalize text-[#8a641c]">{item.status}</span></td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <div className="px-5 py-12 text-center"><p className="text-sm font-semibold">No upcoming appointments</p><p className="mt-2 text-xs text-[#82928d]">New patient requests will show up here.</p></div>
-          )}
-        </section>
-        <aside className="rounded-[22px] bg-[#203332] p-6 text-white">
-          <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#b8d9ca]">Clinic inbox</p>
-          <h2 className="mt-4 text-4xl font-semibold tracking-[-0.07em]">{newMessages}</h2>
-          <p className="mt-1 text-sm text-white/65">new patient enquiries</p>
-          <div className="mt-8 border-t border-white/15 pt-5">
-            <p className="text-sm font-semibold">{confirmed} confirmed visits</p>
-            <p className="mt-2 text-xs leading-5 text-white/55">Appointments stay pending until your team confirms them.</p>
-          </div>
-        </aside>
-      </div>
+
+      <section className="adm-card mt-7 overflow-hidden" aria-labelledby="today-heading">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b-2 border-[#e3ebe7] px-5 py-4">
+          <h2 id="today-heading" className="text-xl font-bold">Today&apos;s patients</h2>
+          <Link href="/admin/appointments?tab=today" className="adm-btn adm-btn-outline adm-btn-sm">Open full list <ArrowRight size={18} /></Link>
+        </div>
+        {agenda.length ? (
+          <ul className="divide-y-2 divide-[#e3ebe7]">
+            {agenda.map((item) => (
+              <li key={item.id} className="flex flex-wrap items-center gap-x-5 gap-y-1 px-5 py-4">
+                <span className="w-28 text-xl font-bold text-[#0a4744]">{formatTime(item.startTime)}</span>
+                <span className="min-w-0 flex-1">
+                  <span className="block text-lg font-bold">{item.patientName}</span>
+                  <span className="block text-base text-[#3f524f]">with {item.doctorName}</span>
+                </span>
+                <span className={`badge ${statusMeta[item.status].className}`}>{statusMeta[item.status].label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="px-5 py-12 text-center text-lg text-[#3f524f]">No patients booked for today.</p>
+        )}
+      </section>
+
+      <section className="mt-7 grid gap-4 sm:grid-cols-2" aria-label="Quick links">
+        <Link href="/admin/doctors" className="adm-card flex items-center gap-4 p-5 hover:shadow-lg">
+          <Stethoscope size={28} className="text-[#0f5f5c]" aria-hidden />
+          <span><span className="block text-lg font-bold">Doctors and timings</span><span className="text-base text-[#3f524f]">{activeDoctors} doctors taking appointments</span></span>
+        </Link>
+        <Link href="/admin/holidays" className="adm-card flex items-center gap-4 p-5 hover:shadow-lg">
+          <CalendarClock size={28} className="text-[#0f5f5c]" aria-hidden />
+          <span><span className="block text-lg font-bold">Clinic closed on a day?</span><span className="text-base text-[#3f524f]">Add a holiday so patients cannot book</span></span>
+        </Link>
+      </section>
     </div>
   );
 }

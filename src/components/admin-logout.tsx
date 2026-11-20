@@ -11,8 +11,8 @@ export function AdminLogout() {
     router.refresh();
   }
   return (
-    <button type="button" onClick={logout} className="mt-4 flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold text-[#657573] hover:bg-[#fff1ee] hover:text-[#a84435]">
-      <LogOut size={17} /> Sign out
+    <button type="button" onClick={logout} className="adm-btn adm-btn-danger mt-3 w-full">
+      <LogOut size={20} /> Sign out
     </button>
   );
 }

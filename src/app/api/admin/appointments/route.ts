@@ -1,6 +1,7 @@
-import { and, asc, desc, eq, like, or } from "drizzle-orm";
+import { and, asc, desc, eq, gt, like, lt, or } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { getAdminSession } from "@/lib/admin-auth";
+import { clinicToday } from "@/lib/clinic-date";
 import { db } from "@/lib/db";
 import { appointments, doctors } from "@/lib/db/schema";
 
@@ -13,7 +14,12 @@ export async function GET(request: Request) {
   const query = searchParams.get("q")?.trim().slice(0, 100) ?? "";
   const status = searchParams.get("status") ?? "";
   const offset = Math.min(10000, Math.max(0, Number(searchParams.get("offset") ?? 0) || 0));
+  const when = searchParams.get("when") ?? "";
+  const today = await clinicToday();
   const where = [];
+  if (when === "today") where.push(eq(appointments.appointmentDate, today));
+  if (when === "upcoming") where.push(gt(appointments.appointmentDate, today));
+  if (when === "past") where.push(lt(appointments.appointmentDate, today));
   if (query) {
     const term = `%${query.replaceAll("%", "\\%").replaceAll("_", "\\_")}%`;
     where.push(or(like(appointments.patientName, term), like(appointments.patientPhone, term), like(appointments.reference, term))!);
@@ -40,10 +46,12 @@ export async function GET(request: Request) {
       .from(appointments)
       .innerJoin(doctors, eq(appointments.doctorId, doctors.id))
       .where(where.length ? and(...where) : undefined)
-      .orderBy(desc(appointments.appointmentDate), asc(appointments.startTime))
+      .orderBy(...(when === "today" || when === "upcoming" || status === "pending"
+        ? [asc(appointments.appointmentDate), asc(appointments.startTime)]
+        : [desc(appointments.appointmentDate), asc(appointments.startTime)]))
       .limit(50)
       .offset(offset);
-    return NextResponse.json({ appointments: rows, hasMore: rows.length === 50 }, { headers: { "Cache-Control": "no-store" } });
+    return NextResponse.json({ appointments: rows, hasMore: rows.length === 50, today }, { headers: { "Cache-Control": "no-store" } });
   } catch (error) {
     console.error("Could not load admin appointments.", error);
     return NextResponse.json({ error: "Appointments could not be loaded." }, { status: 500 });

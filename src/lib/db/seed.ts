@@ -98,12 +98,13 @@ async function seed() {
 
   await database.insert(clinicSettings).values({
     id: "clinic",
-    name: "Your Clinic",
-    address: "",
-    phone: "",
-    whatsapp: "",
-    email: "",
-    timezone: "UTC",
+    name: "Demo Care Clinic",
+    address: "12 Example Road, Sample City 400001",
+    phone: "+91 98765 43210",
+    whatsapp: "919876543210",
+    email: "hello@democlinic.test",
+    workingHours: "Mon–Sat: 9:00 AM – 7:00 PM\nSunday: Closed",
+    timezone: "Asia/Kolkata",
     mapsEmbedUrl: "",
   }).onConflictDoNothing();
   await database.insert(clinicHolidays).values({ date: "2099-01-01", name: "Example clinic closure" }).onConflictDoNothing();
