@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1795190169647,
+      "tag": "0000_windy_inertia",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1795190379923,
+      "tag": "0001_melodic_sway",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1795191913272,
+      "tag": "0002_tan_zodiak",
+      "breakpoints": true
+    }
+  ]
+}
