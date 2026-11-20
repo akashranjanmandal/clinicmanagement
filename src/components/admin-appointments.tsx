@@ -35,7 +35,7 @@ function tabParams(tab: Tab): Record<string, string> {
   return {};
 }
 
-export function AdminAppointments({ initialTab }: { initialTab: Tab }) {
+export function AdminAppointments({ initialTab, pending = 0 }: { initialTab: Tab; pending?: number }) {
   const [tab, setTab] = useState<Tab>(initialTab);
   const [rows, setRows] = useState<Row[]>([]);
   const [today, setToday] = useState("");
@@ -156,6 +156,9 @@ export function AdminAppointments({ initialTab }: { initialTab: Tab }) {
           <div className="adm-card p-12 text-center">
             <p className="text-xl font-bold">Nothing here</p>
             <p className="mt-2 text-lg text-[#3f524f]">{query ? "No appointment matches your search." : tab === "pending" ? "Great — no requests are waiting for confirmation." : "There are no appointments in this list."}</p>
+            {!query && tab !== "pending" && pending > 0 && (
+              <button type="button" onClick={() => chooseTab("pending")} className="adm-btn adm-btn-primary mt-5">{pending} {pending === 1 ? "request is" : "requests are"} waiting for confirmation — view</button>
+            )}
           </div>
         ) : (
           rows.map((row) => {

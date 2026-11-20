@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Eye, EyeOff, LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
+import { CalendarClock, Eye, EyeOff, LoaderCircle, Pencil, Plus, Trash2, X } from "lucide-react";
 import { formatDate, formatDateTime, formatTime, slugify } from "@/lib/admin-format";
+import { DoctorAvailability } from "@/components/doctor-availability";
 
 type Resource =
   | "departments"
@@ -77,7 +78,7 @@ const timezones = [
 const definitions: Record<Resource, Definition> = {
   doctors: {
     title: "Doctors",
-    description: "The doctors patients can book. Hidden doctors stop appearing on the website and in booking.",
+    description: "Add doctors here. Use “Timings & leave” on a doctor to set the days and times they sit, and to mark them away. Hidden doctors disappear from booking.",
     addLabel: "Add a doctor",
     itemName: "doctor",
     empty: "No doctors yet. Click “Add a doctor” to start. (Add a department first if you have not yet.)",
@@ -293,6 +294,7 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+  const [openDoctor, setOpenDoctor] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const items = data.items ?? [];
   const options = data.options ?? {};
@@ -594,6 +596,9 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
                     ))}
                   </dl>
                   <div className="mt-4 flex flex-wrap gap-2 border-t-2 border-[#e3ebe7] pt-4">
+                    {resource === "doctors" && row.id && (
+                      <button type="button" aria-expanded={openDoctor === row.id} onClick={() => setOpenDoctor(openDoctor === row.id ? "" : String(row.id))} className="adm-btn adm-btn-primary"><CalendarClock size={18} /> {openDoctor === row.id ? "Close timings & leave" : "Timings & leave"}</button>
+                    )}
                     {!definition.noEdit && (
                       <button type="button" onClick={() => { setEditing(row); setFormOpen(true); setSuccess(""); setError(""); }} className="adm-btn adm-btn-outline"><Pencil size={18} /> Edit</button>
                     )}
@@ -614,6 +619,9 @@ export function AdminResourceManager({ resource }: { resource: Resource }) {
                       <button type="button" disabled={saving} onClick={() => void remove(row)} className="adm-btn adm-btn-danger"><Trash2 size={18} /> Remove</button>
                     )}
                   </div>
+                  {resource === "doctors" && row.id && openDoctor === row.id && (
+                    <DoctorAvailability doctor={{ id: String(row.id), name: String(row.name), consultationMinutes: Number(row.consultationMinutes) || 30 }} />
+                  )}
                 </article>
               );
             })

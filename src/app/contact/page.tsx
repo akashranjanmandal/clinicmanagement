@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Clock3, Mail, MapPin, Phone } from "lucide-react";
 import { ContactForm } from "@/components/contact-form";
+import { LocationCard } from "@/components/location-card";
 import { getClinicSettings } from "@/lib/clinic-data";
 
 export const metadata: Metadata = {
@@ -57,6 +58,8 @@ export default async function ContactPage() {
                 className="h-[280px] w-full border-0"
               />
             </div>
+          ) : address ? (
+            <div className="mt-5"><LocationCard address={address} /></div>
           ) : null}
         </div>
         <ContactForm />

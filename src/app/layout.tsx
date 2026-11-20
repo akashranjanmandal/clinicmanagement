@@ -9,26 +9,18 @@ const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
-  title: {
-    default: "Clinic Management | Book an appointment",
-    template: "%s | Clinic Management",
-  },
-  description:
-    "Choose a doctor and request an appointment with your clinic.",
-  openGraph: {
-    type: "website",
-    siteName: "Clinic Management",
-    title: "Clinic Management | Book an appointment",
-    description: "Choose a doctor and request an appointment with your clinic.",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Clinic Management | Book an appointment",
-    description: "Choose a doctor and request an appointment with your clinic.",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const settings = await getClinicSettings().catch(() => null);
+  const name = settings?.name?.trim() || "Our Clinic";
+  const description = `${name}: meet our doctors, explore our services and book an appointment online.`;
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+    title: { default: `${name} | Book an appointment`, template: `%s | ${name}` },
+    description,
+    openGraph: { type: "website", siteName: name, title: `${name} | Book an appointment`, description },
+    twitter: { card: "summary", title: `${name} | Book an appointment`, description },
+  };
+}
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
   const settings = await getClinicSettings().catch(() => null);

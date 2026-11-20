@@ -3,7 +3,8 @@ import { BookingPage } from "@/components/booking-page";
 
 export const metadata: Metadata = {
   title: "Book an appointment",
-  robots: { index: false, follow: false },
+  description: "Choose a doctor, pick a free time and request your appointment online.",
+  alternates: { canonical: "/appointments/book" },
 };
 
 export const dynamic = "force-dynamic";

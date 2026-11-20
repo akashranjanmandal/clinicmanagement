@@ -41,7 +41,7 @@ export default async function AdminHomePage() {
   const tiles = [
     { href: "/admin/appointments?tab=today", label: "Patients today", value: todayCount, icon: CalendarCheck, tone: "bg-white" },
     { href: "/admin/appointments?tab=pending", label: "Waiting for your confirmation", value: pending, icon: ClipboardList, tone: pending ? "bg-[#fff4d1] border-[#e6c766]" : "bg-white" },
-    { href: "/admin/messages", label: "New patient messages", value: messages, icon: Mail, tone: messages ? "bg-[#fff4d1] border-[#e6c766]" : "bg-white" },
+    { href: "/admin/messages", label: "New contact messages", value: messages, icon: Mail, tone: messages ? "bg-[#fff4d1] border-[#e6c766]" : "bg-white" },
     { href: "/admin/appointments?tab=upcoming", label: "Coming up after today", value: upcoming, icon: CalendarClock, tone: "bg-white" },
   ];
 
@@ -96,7 +96,7 @@ export default async function AdminHomePage() {
       {user?.role === "super_admin" && <section className="mt-7 grid gap-4 sm:grid-cols-2" aria-label="Quick links">
         <Link href="/admin/doctors" className="adm-card flex items-center gap-4 p-5 hover:shadow-lg">
           <Stethoscope size={28} className="text-[#0f5f5c]" aria-hidden />
-          <span><span className="block text-lg font-bold">Doctors and timings</span><span className="text-base text-[#3f524f]">{activeDoctors} doctors taking appointments</span></span>
+          <span><span className="block text-lg font-bold">Doctor timings and leave</span><span className="text-base text-[#3f524f]">{activeDoctors} {activeDoctors === 1 ? "doctor" : "doctors"} — set the days they sit, or mark them away</span></span>
         </Link>
         <Link href="/admin/holidays" className="adm-card flex items-center gap-4 p-5 hover:shadow-lg">
           <CalendarClock size={28} className="text-[#0f5f5c]" aria-hidden />

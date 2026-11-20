@@ -6,12 +6,9 @@ const sections = new Set([
   "departments",
   "doctors",
   "services",
-  "schedules",
-  "leaves",
   "holidays",
   "messages",
   "settings",
-  "users",
 ]);
 
 type Props = { params: Promise<{ section: string }> };

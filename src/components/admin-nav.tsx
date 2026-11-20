@@ -6,13 +6,10 @@ import { useState } from "react";
 import {
   Building2,
   CalendarCheck,
-  CalendarOff,
   CalendarRange,
-  Clock3,
   HeartPulse,
   Home,
   Info,
-  KeyRound,
   Mail,
   Menu,
   Stethoscope,
@@ -28,20 +25,17 @@ const groups = [
     items: [
       { href: "/admin", label: "Home", icon: Home },
       { href: "/admin/appointments", label: "Appointments", icon: CalendarCheck, count: "pending" as const },
-      { href: "/admin/messages", label: "Messages", icon: Mail, count: "messages" as const },
+      { href: "/admin/messages", label: "Contact messages", icon: Mail, count: "messages" as const },
     ],
   },
   {
     title: "Clinic setup",
     items: [
-      { href: "/admin/doctors", label: "Doctors", icon: Stethoscope },
-      { href: "/admin/schedules", label: "Doctor timings", icon: Clock3 },
-      { href: "/admin/leaves", label: "Doctor leave", icon: CalendarOff },
+      { href: "/admin/doctors", label: "Doctors, timings & leave", icon: Stethoscope },
       { href: "/admin/holidays", label: "Clinic holidays", icon: CalendarRange },
       { href: "/admin/departments", label: "Departments", icon: Building2 },
       { href: "/admin/services", label: "Services", icon: HeartPulse },
       { href: "/admin/settings", label: "Clinic details", icon: Info },
-      { href: "/admin/users", label: "Staff logins", icon: KeyRound },
     ],
   },
 ];
@@ -74,7 +68,7 @@ export function AdminNav({ user, counts }: { user: { name: string; role: string 
                   const countKey = "count" in rest ? rest.count : undefined;
                   const count = countKey ? counts[countKey] : 0;
                   return (
-                    <Link key={href} href={href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined} className="adm-nav-link">
+                    <Link key={href} href={href === "/admin/appointments" && counts.pending > 0 ? "/admin/appointments?tab=pending" : href} onClick={() => setOpen(false)} aria-current={active ? "page" : undefined} className="adm-nav-link">
                       <Icon size={22} aria-hidden /> {label}
                       {count > 0 && <span className="adm-count" aria-label={`${count} waiting`}>{count}</span>}
                     </Link>

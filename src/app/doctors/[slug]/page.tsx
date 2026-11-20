@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowUpRight, CalendarDays, Check } from "lucide-react";
-import { getDoctor } from "@/lib/clinic-data";
+import { getClinicSettings, getDoctor } from "@/lib/clinic-data";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -10,10 +10,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const doctor = await getDoctor(slug);
   if (!doctor) return { title: "Doctor not found" };
+  const clinicName = (await getClinicSettings().catch(() => null))?.name?.trim() || "our clinic";
   return {
     title: doctor.name,
-    description: `${doctor.name}, ${doctor.specialization} at Clinic Management.`,
-    openGraph: { title: `${doctor.name} | Clinic Management`, description: doctor.biography },
+    description: `${doctor.name}, ${doctor.specialization} at ${clinicName}. ${doctor.biography}`.slice(0, 300),
+    alternates: { canonical: `/doctors/${doctor.slug}` },
+    openGraph: { title: `${doctor.name} | ${clinicName}`, description: doctor.biography },
   };
 }
 

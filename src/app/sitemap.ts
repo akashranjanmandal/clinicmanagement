@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
-  const fixedRoutes = ["", "/about", "/doctors", "/services", "/contact"].map((route) => ({
+  const fixedRoutes = ["", "/about", "/doctors", "/services", "/appointments/book", "/contact"].map((route) => ({
     url: `${baseUrl}${route}`,
     lastModified: new Date(),
     changeFrequency: "monthly" as const,

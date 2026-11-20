@@ -15,14 +15,14 @@ export type SiteInfo = {
 };
 
 const links = [
-  { href: "/", label: "Book online" },
+  { href: "/", label: "Home" },
   { href: "/doctors", label: "Our doctors" },
   { href: "/services", label: "Services" },
   { href: "/about", label: "About" },
   { href: "/contact", label: "Contact" },
 ];
 
-const hideChrome = (path: string) => path.startsWith("/admin") || path === "/" || path.startsWith("/appointments/book");
+const hideChrome = (path: string) => path.startsWith("/admin");
 const tel = (value: string) => `tel:${value.replace(/[^\d+]/g, "")}`;
 
 export function SiteHeader({ site }: { site: SiteInfo }) {

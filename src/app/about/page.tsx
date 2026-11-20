@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ArrowUpRight, HeartHandshake, Leaf, ShieldCheck } from "lucide-react";
-import { clinic } from "@/lib/clinic-content";
+import { getClinicSettings } from "@/lib/clinic-data";
 
 export const metadata: Metadata = {
   title: "About our clinic",
@@ -14,7 +14,10 @@ const values = [
   { icon: Leaf, title: "Care for the long run", body: "Small, sustainable steps can make a meaningful difference to your health over time." },
 ];
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const clinic = { name: (await getClinicSettings().catch(() => null))?.name?.trim() || "our clinic" };
   return (
     <>
       <section className="page-wrap py-20 md:py-28">

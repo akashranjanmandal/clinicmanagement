@@ -18,12 +18,15 @@ export function BookingForm({
   doctors,
   initialDoctor,
   clinicPhone,
+  whatsapp = "",
+  clinicName = "the clinic",
   timeZone,
 }: {
   doctors: DoctorCardData[];
   initialDoctor: string;
   clinicPhone: string;
   whatsapp?: string;
+  clinicName?: string;
   timeZone: string;
 }) {
   const [doctorId, setDoctorId] = useState(initialDoctor);
@@ -98,6 +101,18 @@ export function BookingForm({
           {done.status === "confirmed" ? "Your appointment is confirmed." : "Our team will call you to confirm."}
         </p>
         <p className="mt-5 inline-block rounded-xl bg-[#f1f6f3] px-5 py-3 text-lg">Booking number: <strong>{done.reference}</strong></p>
+        {whatsapp && (
+          <div className="mt-6">
+            <a
+              href={`https://wa.me/${whatsapp.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello ${clinicName}, I booked appointment ${done.reference} with ${doctor?.name ?? "a doctor"} on ${formatDate(date)} at ${formatTime(time)}.`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center justify-center rounded-full bg-[#1a8f4c] px-6 py-3.5 text-lg font-bold text-white hover:bg-[#157a40]"
+            >
+              Send details on WhatsApp
+            </a>
+          </div>
+        )}
       </div>
     );
   }
