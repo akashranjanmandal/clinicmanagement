@@ -44,23 +44,25 @@ export const serviceInput = z.object({
   isPublished: z.boolean().optional(),
 });
 
-export const scheduleInput = z.object({
+export const scheduleBase = z.object({
   doctorId: z.string().uuid(),
   weekday: z.coerce.number().int().min(0).max(6),
   startTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
   endTime: z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/),
   slotMinutes: z.coerce.number().int().min(5).max(240),
-}).refine((value) => value.endTime > value.startTime, {
+});
+export const scheduleInput = scheduleBase.refine((value) => value.endTime > value.startTime, {
   message: "End time must be after start time.",
   path: ["endTime"],
 });
 
-export const exceptionInput = z.object({
+export const exceptionBase = z.object({
   doctorId: z.string().uuid(),
   startDate: z.string().date(),
   endDate: z.string().date(),
   reason: z.string().trim().max(300).optional(),
-}).refine((value) => value.endDate >= value.startDate, {
+});
+export const exceptionInput = exceptionBase.refine((value) => value.endDate >= value.startDate, {
   message: "End date must be on or after start date.",
   path: ["endDate"],
 });

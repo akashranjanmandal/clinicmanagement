@@ -108,7 +108,7 @@ const definitions: Record<Resource, Definition> = {
   },
   schedules: {
     title: "Doctor timings",
-    description: "The days and hours each doctor sees patients. For a lunch break, add two sessions (for example 9–1 and 2–5).",
+    description: "The days and hours each doctor sees patients. You can add several sessions on the same day (for example 9–1 and 4–7), and tick many days at once.",
     addLabel: "Add timings",
     itemName: "timing",
     empty: "No timings yet. Patients cannot book a doctor until you add timings.",
@@ -118,7 +118,7 @@ const definitions: Record<Resource, Definition> = {
       { key: "weekday", label: "Days", type: "weekdays", required: true, wide: true, help: "Tick every day this doctor sits at these hours." },
       { key: "startTime", label: "Starts at", type: "time", required: true },
       { key: "endTime", label: "Ends at", type: "time", required: true },
-      { key: "slotMinutes", label: "Minutes per appointment", type: "number", min: 5, max: 240, required: true, help: "Example: 30 means slots at 9:00, 9:30, 10:00…" },
+      { key: "slotMinutes", label: "Minutes per appointment", type: "number", min: 5, max: 240, required: true, help: "Gap between patient slots, e.g. 30 gives 9:00, 9:30, 10:00… It is never shorter than the doctor's own appointment length." },
     ],
     cardTitle: (row) => `${text(row.doctorName)} — ${dayName(row.weekday)}`,
     details: [

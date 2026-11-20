@@ -9,9 +9,11 @@ import {
   adminResourceUpdate,
   departmentInput,
   doctorInput,
+  exceptionBase,
   exceptionInput,
   holidayInput,
   messageStatusInput,
+  scheduleBase,
   scheduleInput,
   serviceInput,
   settingsInput,
@@ -53,12 +55,13 @@ const resources = new Set<Resource>([
   "users",
 ]);
 
-async function authorize() {
+async function authorize(resource?: string) {
   const user = await getAdminSession();
   if (!user) {
     return { response: NextResponse.json({ error: "Sign in to continue." }, { status: 401 }) };
   }
-  if (user.role !== "super_admin") {
+  // Front-desk staff may handle patient messages; everything else is administrator-only.
+  if (user.role !== "super_admin" && resource !== "messages") {
     return { response: NextResponse.json({ error: "You do not have permission to manage clinic settings." }, { status: 403 }) };
   }
   if (!db) {
@@ -176,9 +179,9 @@ async function getResource(resource: Resource) {
 }
 
 export async function GET(_request: Request, { params }: Props) {
-  const auth = await authorize();
-  if (auth.response) return auth.response;
   const { resource: key } = await params;
+  const auth = await authorize(key);
+  if (auth.response) return auth.response;
   if (!resources.has(key as Resource)) {
     return NextResponse.json({ error: "Unknown management section." }, { status: 404 });
   }
@@ -319,10 +322,10 @@ export async function POST(request: Request, { params }: Props) {
 }
 
 export async function PATCH(request: Request, { params }: Props) {
-  const auth = await authorize();
+  const { resource: key } = await params;
+  const auth = await authorize(key);
   if (auth.response) return auth.response;
   const { user, database } = auth;
-  const { resource: key } = await params;
   if (!resources.has(key as Resource)) return NextResponse.json({ error: "Unknown management section." }, { status: 404 });
   let body: unknown;
   try {
@@ -350,6 +353,7 @@ export async function PATCH(request: Request, { params }: Props) {
             ...parsed.data,
             ...(parsed.data.imageUrl !== undefined ? { imageUrl: parsed.data.imageUrl || null } : {}),
             ...(parsed.data.consultationFee !== undefined ? { consultationFee: parsed.data.consultationFee ?? null } : {}),
+            ...(("consultationFee" in data && (data.consultationFee === "" || data.consultationFee === null)) ? { consultationFee: null } : {}),
           }).where(eq(doctors.id, id)).returning({ id: doctors.id });
           break;
         }
@@ -363,9 +367,31 @@ export async function PATCH(request: Request, { params }: Props) {
           break;
         }
         case "schedules": {
-          const parsed = scheduleInput.partial().safeParse(data);
-          if (!parsed.success) throw new Error("Check the schedule details.");
+          const parsed = scheduleBase.partial().safeParse(data);
+          if (!parsed.success) throw new Error("Check the timing details.");
+          const [existing] = await tx.select().from(doctorSchedules).where(eq(doctorSchedules.id, id)).limit(1);
+          if (!existing) break;
+          const start = parsed.data.startTime ?? existing.startTime;
+          const end = parsed.data.endTime ?? existing.endTime;
+          if (end <= start) throw new Error("End time must be after start time.");
           [updated] = await tx.update(doctorSchedules).set(parsed.data).where(eq(doctorSchedules.id, id)).returning({ id: doctorSchedules.id });
+          break;
+        }
+        case "leaves": {
+          const parsed = exceptionBase.partial().safeParse(data);
+          if (!parsed.success) throw new Error("Check the leave details.");
+          const [existing] = await tx.select().from(scheduleExceptions).where(eq(scheduleExceptions.id, id)).limit(1);
+          if (!existing) break;
+          const first = parsed.data.startDate ?? existing.startDate;
+          const last = parsed.data.endDate ?? existing.endDate;
+          if (last < first) throw new Error("The last day must be on or after the first day.");
+          [updated] = await tx.update(scheduleExceptions).set(parsed.data).where(eq(scheduleExceptions.id, id)).returning({ id: scheduleExceptions.id });
+          break;
+        }
+        case "holidays": {
+          const parsed = holidayInput.partial().safeParse(data);
+          if (!parsed.success) throw new Error("Check the holiday details.");
+          [updated] = await tx.update(clinicHolidays).set(parsed.data).where(eq(clinicHolidays.id, id)).returning({ id: clinicHolidays.id });
           break;
         }
         case "messages": {

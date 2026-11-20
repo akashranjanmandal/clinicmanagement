@@ -93,7 +93,7 @@ export default async function AdminHomePage() {
         )}
       </section>
 
-      <section className="mt-7 grid gap-4 sm:grid-cols-2" aria-label="Quick links">
+      {user?.role === "super_admin" && <section className="mt-7 grid gap-4 sm:grid-cols-2" aria-label="Quick links">
         <Link href="/admin/doctors" className="adm-card flex items-center gap-4 p-5 hover:shadow-lg">
           <Stethoscope size={28} className="text-[#0f5f5c]" aria-hidden />
           <span><span className="block text-lg font-bold">Doctors and timings</span><span className="text-base text-[#3f524f]">{activeDoctors} doctors taking appointments</span></span>
@@ -102,7 +102,7 @@ export default async function AdminHomePage() {
           <CalendarClock size={28} className="text-[#0f5f5c]" aria-hidden />
           <span><span className="block text-lg font-bold">Clinic closed on a day?</span><span className="text-base text-[#3f524f]">Add a holiday so patients cannot book</span></span>
         </Link>
-      </section>
+      </section>}
     </div>
   );
 }

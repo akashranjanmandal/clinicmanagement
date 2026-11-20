@@ -12,7 +12,7 @@ A clinic appointment-booking and management app built with Next.js, TypeScript, 
 
 | File | Used by | Database |
 | --- | --- | --- |
-| `.env.development.local` | `npm run dev` | local SQLite (`file:local.db`) + dummy data |
+| `.env.development.local` | `npm run dev` | local SQLite (`file:local.db`), empty |
 | `.env.production.local` | `npm run build` / `npm start` (local prod test) | Turso |
 | Hosting dashboard (e.g. Vercel) | deployed app | Turso |
 
@@ -22,8 +22,8 @@ All real env files are gitignored; `.env.example` lists every variable. Generate
 
 ```bash
 npm install
-cp .env.example .env.development.local   # set AUTH_SECRET, SEED_DEMO_DATA=true, SEED_ADMIN_*
-npm run db:setup:local                    # migrate + dummy data
+cp .env.example .env.development.local   # set AUTH_SECRET and ADMIN_*
+npm run db:setup:local                    # migrate + create the first admin
 npm run dev
 ```
 
@@ -47,8 +47,6 @@ Admin sign-in is at `/admin/login`. Passwords are bcrypt-hashed; the session is 
 | `AUTH_SECRET` | At least 32 characters; signs admin sessions and HMACs rate-limit keys |
 | `NEXT_PUBLIC_SITE_URL` | Public origin used for metadata and sitemap |
 | `NEXT_PUBLIC_MAPS_EMBED_URL` | Optional, clinic-specific Google Maps embed URL |
-| `SEED_DEMO_DATA` | Must be `true` to enable development seed data |
-| `SEED_ADMIN_EMAIL`, `SEED_ADMIN_NAME`, `SEED_ADMIN_PASSWORD` | Optional development admin created by the seed command |
 | `ADMIN_EMAIL`, `ADMIN_NAME`, `ADMIN_PASSWORD` | One-time admin bootstrap inputs for `db:create-admin` |
 
 The Turso token previously pasted into the chat is exposed; revoke it in Turso and issue a new token before configuring this app.

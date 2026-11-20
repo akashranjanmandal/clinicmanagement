@@ -65,7 +65,7 @@ export function AdminNav({ user, counts }: { user: { name: string; role: string 
           <p className="text-base text-[#3f524f]">Front desk console</p>
         </div>
         <nav aria-label="Admin menu" className="grid gap-4">
-          {groups.map((group) => (
+          {groups.filter((group) => group.title === "Daily work" || user.role === "super_admin").map((group) => (
             <div key={group.title}>
               <p className="mb-2 px-2 text-sm font-bold uppercase tracking-wider text-[#3f524f]">{group.title}</p>
               <div className="grid gap-1">
