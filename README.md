@@ -8,32 +8,15 @@ A clinic appointment-booking and management app built with Next.js, TypeScript, 
 - npm
 - A Turso database for shared/production data, or a local LibSQL database for development
 
-## Environments
+## Environment
 
-| File | Used by | Database |
-| --- | --- | --- |
-| `.env.development.local` | `npm run dev` | local SQLite (`file:local.db`), empty |
-| `.env.production.local` | `npm run build` / `npm start` (local prod test) | Turso |
-| Hosting dashboard (e.g. Vercel) | deployed app | Turso |
-
-All real env files are gitignored; `.env.example` lists every variable. Generate secrets with `openssl rand -base64 48`.
-
-### Development
+One env, using the real Turso database (no local database). Copy `.env.example` to `.env.local` (gitignored) and fill it in. On Netlify, add the same variables under Site configuration → Environment variables.
 
 ```bash
 npm install
-cp .env.example .env.development.local   # set AUTH_SECRET and ADMIN_*
-npm run db:setup:local                    # migrate + create the first admin
-npm run dev
-```
-
-### Production
-
-```bash
-cp .env.example .env.production.local     # Turso URL/token, AUTH_SECRET, site URL, ADMIN_*
-npm run db:migrate:prod                   # apply schema to Turso
-npm run db:create-admin:prod              # first super-admin (password >= 12 chars)
-npm run build && npm start
+npm run db:migrate         # apply schema to Turso
+npm run db:create-admin    # first admin (reads ADMIN_* from .env.local)
+npm run dev                # local development (uses the same Turso database)
 ```
 
 Admin sign-in is at `/admin/login`. Passwords are bcrypt-hashed; the session is a signed, HTTP-only cookie (secure in production). Never commit env files or share tokens.
