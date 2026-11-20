@@ -22,12 +22,13 @@ const links = [
   { href: "/contact", label: "Contact" },
 ];
 
+const hideChrome = (path: string) => path.startsWith("/admin") || path === "/" || path.startsWith("/appointments/book");
 const tel = (value: string) => `tel:${value.replace(/[^\d+]/g, "")}`;
 
 export function SiteHeader({ site }: { site: SiteInfo }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
-  if (pathname.startsWith("/admin")) return null;
+  if (hideChrome(pathname)) return null;
   const isActive = (href: string) => (href === "/" ? pathname === "/" : pathname.startsWith(href));
 
   return (
@@ -75,7 +76,7 @@ export function SiteHeader({ site }: { site: SiteInfo }) {
 
 export function SiteFooter({ site }: { site: SiteInfo }) {
   const pathname = usePathname();
-  if (pathname.startsWith("/admin")) return null;
+  if (hideChrome(pathname)) return null;
   return (
     <>
       <footer className="mt-20 border-t border-[#dbe5df] bg-[#12302e] text-white">
